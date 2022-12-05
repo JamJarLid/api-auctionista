@@ -84,9 +84,10 @@ def get_object_details(id):
     cursor = conn.cursor(pymysql.cursors.DictCursor)
     try:
         query = "SELECT * FROM objects WHERE objects.id = %s"
+        query2 = "SELECT * FROM bids WHERE bids.object = %s ORDER BY bids.amount DESC LIMIT 5"        
         bind = (id)
         cursor.execute(query, bind)
-        rows = cursor.fetchone()
+        rows = cursor.fetchall()
         response = jsonify(rows)
         response.status_code = 200
         return response
@@ -106,7 +107,7 @@ def create_object():
         query = '''INSERT INTO objects SET objects.title = %s, objects.start_time = CURRENT_TIMESTAMP, 
 objects.end_time = %s, objects.description = %s, objects.poster = %s, objects.info = %s'''
         bind = (request.json["title"], request.json["end_time"], request.json["description"],
-            user, request.json["info"],)
+            user, request.json["info"])
         if user is not None:
             cursor.execute(query, bind)
             conn.commit()
@@ -121,4 +122,27 @@ objects.end_time = %s, objects.description = %s, objects.poster = %s, objects.in
         cursor.close()
         conn.close()
 
+# create bid
+@app.route("/api/objects/<id>/bid", methods=["POST"])
+def create_bid(id):
+    conn = mysql.connect()
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
+    try:
+        user = session["user"]["id"]
+        query = "INSERT INTO bids SET bids.user = %s, bids.object = %s, bids.amount = %s, bids.date= CURRENT_TIMESTAMP"
+        bind = (user, id, request.json["amount"])
+        if user is not None:
+            cursor.execute(query, bind)
+            conn.commit()
+            response = jsonify({"Created bid ": cursor.lastrowid})
+            response.status_code = 200
+            return response
+        else: 
+            return jsonify("Error: User is not logged in.")
+    except Exception as e:
+        print(e)
+    finally:
+        cursor.close()
+        conn.close()
+        
 app.run()
