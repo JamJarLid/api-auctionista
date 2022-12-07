@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify, session
 import pymysql
 from flaskext.mysql import MySQL
+from datetime import datetime
 
 app = Flask(__name__)
 app.config.update(
@@ -26,15 +27,15 @@ def register():
     conn = mysql.connect()
     cursor = conn.cursor(pymysql.cursors.DictCursor)
     try: 
-        query = "INSERT INTO users SET name = %s email = %s password %s"
-        bind = (request.json['name'], request.json['email'], request.json['password']) 
+        query = "INSERT INTO users SET name = %s, email = %s, password = %s"
+        bind = (request.json["name"], request.json["email"], request.json["password"]) 
         cursor.execute(query, bind)
         conn.commit()
         response = jsonify({"Created user ": cursor.lastrowid})
         response.status_code = 200
         return response
     except Exception as e:
-        return jsonify({e})
+        print(e)
     finally:
         cursor.close()
         conn.close()
@@ -76,7 +77,7 @@ GROUP BY objects.id''')
         response.status_code = 200
         return response
     except Exception as e:
-        return jsonify(e)
+        print(e)
     finally:
         cursor.close()
         conn.close()
@@ -100,7 +101,45 @@ GROUP BY objects.id'''
         response.status_code = 200
         return response
     except Exception as e:
-        return jsonify(e)
+        print(e)
+    finally:
+        cursor.close()
+        conn.close()
+
+# get ongoing objects
+@app.route("/api/objects/<status>", methods=["GET"])
+def get_ongoing_objects(status):
+    conn = mysql.connect()
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
+    try:
+        if status == "ongoing":
+            query = '''SELECT objects.title, objects.info, objects.end_time, MAX(bids.amount) as current_bid
+FROM objects 
+LEFT JOIN bids
+ON objects.id = bids.object
+WHERE CURRENT_TIMESTAMP BETWEEN objects.start_time AND objects.end_time
+GROUP BY objects.id'''
+        elif status == "finished":
+            query = '''SELECT objects.title, objects.info, objects.end_time, MAX(bids.amount) as current_bid
+FROM objects 
+LEFT JOIN bids
+ON objects.id = bids.object
+WHERE CURRENT_TIMESTAMP > objects.end_time
+GROUP BY objects.id'''
+        elif status == "sold":
+            query = '''SELECT objects.title, objects.info, objects.end_time, MAX(bids.amount) as current_bid
+FROM objects 
+LEFT JOIN bids
+ON objects.id = bids.object
+WHERE CURRENT_TIMESTAMP > objects.end_time AND 
+GROUP BY objects.id'''
+        cursor.execute(query)
+        rows = cursor.fetchall()
+        response = jsonify(rows)
+        response.status_code = 200
+        return response
+    except Exception as e:
+        print(e)
     finally:
         cursor.close()
         conn.close()
@@ -128,17 +167,35 @@ def get_object_details(id):
         conn.close()    
     
 # create new object
-@app.route("/api/objects/create", methods=["POST"])
+@app.route("/api/objects", methods=["POST"])
 def create_object():
     conn = mysql.connect()
     cursor = conn.cursor(pymysql.cursors.DictCursor)
     try:
         user = session["user"]["id"]
-        query = '''INSERT INTO objects SET objects.title = %s, objects.start_time = CURRENT_TIMESTAMP, 
-objects.end_time = %s, objects.description = %s, objects.poster = %s, objects.info = %s, 
-objects.starting_price = %s, objects.reserve_price = %s'''
-        bind = (request.json["title"], request.json["end_time"], request.json["description"],
-            user, request.json["info"], request.json["starting_price"], request.json["reserve_price"])
+        query = '''INSERT INTO objects 
+SET title = %s, 
+start_time = %s, 
+end_time = %s, 
+description = %s, 
+poster = %s, 
+info = %s, 
+starting_price = %s, 
+reserve_price = %s,
+category = %s'''
+        if request.json["start_time"]:
+            start_time = request.json["start_time"]
+        else: start_time = datetime.now()
+        print(start_time)
+        bind = (request.json["title"], 
+            start_time, 
+            request.json["end_time"], 
+            request.json["description"],
+            user, 
+            request.json["info"], 
+            request.json["starting_price"], 
+            request.json["reserve_price"],
+            request.json["category"])
         if user is not None:
             cursor.execute(query, bind)
             conn.commit()
@@ -186,5 +243,33 @@ def create_bid(id):
     finally:
         cursor.close()
         conn.close()
+
+# view posted items
+@app.route("/api/user/auction_objects", methods=["GET"])
+def get_user_objects():
+    conn = mysql.connect()
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
+    try:
+        user = session["user"]["id"]
+        query = f'''SELECT objects.title, objects.info, objects.end_time, MAX(bids.amount) as current_bid
+FROM objects 
+LEFT JOIN bids
+ON objects.id = bids.object 
+WHERE OBJECTS.POSTER = {user}
+GROUP BY objects.id'''
+        if user is not None:
+            cursor.execute(query)
+            rows = cursor.fetchall()
+            response = jsonify(rows)
+            response.status_code = 200
+            return response
+        else:
+            return jsonify("Error: User is not logged in.")
+    except Exception as e:
+        print(e)
+    finally:
+        cursor.close()
+        conn.close()
+
         
 app.run()
