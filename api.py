@@ -106,9 +106,9 @@ GROUP BY objects.id'''
         cursor.close()
         conn.close()
 
-# get ongoing objects
+# get objects by status
 @app.route("/api/objects/<status>", methods=["GET"])
-def get_ongoing_objects(status):
+def get_objects_by_status(status):
     conn = mysql.connect()
     cursor = conn.cursor(pymysql.cursors.DictCursor)
     try:
@@ -131,7 +131,16 @@ GROUP BY objects.id'''
 FROM objects 
 LEFT JOIN bids
 ON objects.id = bids.object
-WHERE CURRENT_TIMESTAMP > objects.end_time AND 
+WHERE CURRENT_TIMESTAMP > objects.end_time 
+AND bids.amount > objects.starting_price AND bids.amount > objects.reserve_price
+GROUP BY objects.id'''
+        elif status == "unsold":
+            query = '''SELECT objects.title, objects.info, objects.end_time, MAX(bids.amount) as current_bid
+FROM objects 
+LEFT JOIN bids
+ON objects.id = bids.object
+WHERE CURRENT_TIMESTAMP BETWEEN objects.start_time AND objects.end_time
+OR (CURRENT_TIMESTAMP > objects.end_time AND bids.amount < objects.reserve_price)
 GROUP BY objects.id'''
         cursor.execute(query)
         rows = cursor.fetchall()
