@@ -66,7 +66,35 @@ def get_objects():
     conn = mysql.connect()
     cursor = conn.cursor(pymysql.cursors.DictCursor)
     try:
-        cursor.execute("SELECT title, info, end_time from objects")
+        cursor.execute('''SELECT objects.title, objects.info, objects.end_time, MAX(bids.amount) as current_bid
+FROM objects
+LEFT JOIN bids
+ON objects.id = bids.object
+GROUP BY objects.id''')
+        rows = cursor.fetchall()
+        response = jsonify(rows)
+        response.status_code = 200
+        return response
+    except Exception as e:
+        return jsonify(e)
+    finally:
+        cursor.close()
+        conn.close()
+
+# get object category list
+@app.route("/api/objects/categories/<id>", methods=["GET"])
+def get_objects_by_category(id):
+    conn = mysql.connect()
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
+    try:
+        query = '''SELECT objects.title, objects.info, objects.end_time, MAX(bids.amount) as current_bid
+FROM objects 
+LEFT JOIN bids
+ON objects.id = bids.object
+WHERE objects.category = %s
+GROUP BY objects.id'''
+        bind = (id)
+        cursor.execute(query, bind)
         rows = cursor.fetchall()
         response = jsonify(rows)
         response.status_code = 200
@@ -88,7 +116,9 @@ def get_object_details(id):
         bind = (id)
         cursor.execute(query, bind)
         rows = cursor.fetchall()
-        response = jsonify(rows)
+        cursor.execute(query2, bind)
+        rows2 = cursor.fetchall()
+        response = jsonify([rows, rows2])
         response.status_code = 200
         return response
     except Exception as e:
@@ -105,9 +135,10 @@ def create_object():
     try:
         user = session["user"]["id"]
         query = '''INSERT INTO objects SET objects.title = %s, objects.start_time = CURRENT_TIMESTAMP, 
-objects.end_time = %s, objects.description = %s, objects.poster = %s, objects.info = %s'''
+objects.end_time = %s, objects.description = %s, objects.poster = %s, objects.info = %s, 
+objects.starting_price = %s, objects.reserve_price = %s'''
         bind = (request.json["title"], request.json["end_time"], request.json["description"],
-            user, request.json["info"])
+            user, request.json["info"], request.json["starting_price"], request.json["reserve_price"])
         if user is not None:
             cursor.execute(query, bind)
             conn.commit()
@@ -129,14 +160,25 @@ def create_bid(id):
     cursor = conn.cursor(pymysql.cursors.DictCursor)
     try:
         user = session["user"]["id"]
+        cursor.execute(f"SELECT objects.poster FROM objects WHERE objects.id = {id} ")
+        seller = cursor.fetchone()
+        cursor.execute(f"SELECT MAX(bids.amount) AS current_bid FROM bids WHERE bids.object = {id}")
+        current_bid = cursor.fetchone()
+        new_bid = request.json["amount"]
         query = "INSERT INTO bids SET bids.user = %s, bids.object = %s, bids.amount = %s, bids.date= CURRENT_TIMESTAMP"
-        bind = (user, id, request.json["amount"])
+        bind = (user, id, new_bid)
         if user is not None:
-            cursor.execute(query, bind)
-            conn.commit()
-            response = jsonify({"Created bid ": cursor.lastrowid})
-            response.status_code = 200
-            return response
+            if user != seller['poster']:
+                if new_bid > current_bid['current_bid']:
+                    cursor.execute(query, bind)
+                    conn.commit()
+                    response = jsonify({"Created bid ": cursor.lastrowid})
+                    response.status_code = 200
+                    return response
+                else:
+                    return jsonify(f"Error: Bid is too low, your bid needs to be higher than {current_bid['current_bid']}")
+            else:
+                return jsonify("Error: You cannot bid on your own item!")
         else: 
             return jsonify("Error: User is not logged in.")
     except Exception as e:
