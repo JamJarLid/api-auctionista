@@ -388,7 +388,26 @@ def seller_rate(id):
         cursor.close()
         conn.close()
             
-
-
+# see user information
+@app.route("/api/user/<id>", methods=["GET"])
+def get_user_details(id):
+    conn = mysql.connect()
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
+    try:
+        query = "SELECT * FROM users WHERE users.id = %s"
+        query2 = "SELECT ROUND(AVG(ratings.rating), 1) FROM ratings WHERE ratings.user = %s"
+        bind = (id)
+        cursor.execute(query, bind)
+        info = cursor.fetchone()
+        cursor.execute(query2, bind)
+        rating = cursor.fetchone()
+        response = jsonify([info, rating])
+        response.status_code = 200
+        return response
+    except Exception as e:
+        print(e)
+    finally:
+        cursor.close()
+        conn.close()
 
 app.run()
