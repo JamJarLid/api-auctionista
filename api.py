@@ -333,4 +333,31 @@ GROUP BY objects.id'''
         cursor.close()
         conn.close()
 
+#get searched objects by category
+@app.route("/api/category/<id>/search/<term>", methods=["GET"])
+def get_searched_objects_by_category(term, id):
+    conn = mysql.connect()
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
+    try:
+        query = f'''SELECT objects.title, objects.info, objects.end_time, MAX(bids.amount) as current_bid
+FROM objects 
+LEFT JOIN bids
+ON objects.id = bids.object 
+WHERE (objects.title LIKE '%{term}%' 
+OR objects.info LIKE '%{term}%' 
+OR objects.description LIKE '%{term}%')
+AND category = {id}
+GROUP BY objects.id'''
+        cursor.execute(query)
+        rows = cursor.fetchall()
+        response = jsonify(rows)
+        response.status_code = 200
+        return response
+    except Exception as e:
+        print(e)
+    finally:
+        cursor.close()
+        conn.close()
+
+
 app.run()
