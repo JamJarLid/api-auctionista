@@ -361,7 +361,7 @@ GROUP BY objects.id'''
 
 # rating a seller
 @app.route("/api/object/<id>/rate", methods=["POST"])
-def seller_rate(id):
+def rate_seller(id):
     conn = mysql.connect()
     cursor = conn.cursor(pymysql.cursors.DictCursor)
     try:
@@ -395,7 +395,7 @@ def get_user_details(id):
     cursor = conn.cursor(pymysql.cursors.DictCursor)
     try:
         query = "SELECT * FROM users WHERE users.id = %s"
-        query2 = "SELECT ROUND(AVG(ratings.rating), 1) FROM ratings WHERE ratings.user = %s"
+        query2 = "SELECT ROUND(AVG(ratings.rating), 1) AS rating FROM ratings WHERE ratings.user = %s"
         bind = (id)
         cursor.execute(query, bind)
         info = cursor.fetchone()
