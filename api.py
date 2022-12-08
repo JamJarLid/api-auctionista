@@ -254,7 +254,7 @@ def create_bid(id):
         conn.close()
 
 # view posted items
-@app.route("/api/user/auction_objects", methods=["GET"])
+@app.route("/api/user/objects", methods=["GET"])
 def get_user_objects():
     conn = mysql.connect()
     cursor = conn.cursor(pymysql.cursors.DictCursor)
@@ -280,5 +280,57 @@ GROUP BY objects.id'''
         cursor.close()
         conn.close()
 
-        
+# get bidded objects
+@app.route("/api/user/objects/bidded", methods=["GET"])
+def get_bidded_objects():
+    conn = mysql.connect()
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
+    try:
+        user = session["user"]["id"]
+        query = f'''SELECT objects.title, objects.info, objects.end_time, MAX(bids.amount) as current_bid
+FROM objects 
+LEFT JOIN bids
+ON objects.id = bids.object 
+WHERE objects.id IN 
+	(SELECT bids.object FROM bids WHERE bids.user = {user})
+GROUP BY objects.id;'''
+        if user is not None:
+            cursor.execute(query)
+            rows = cursor.fetchall()
+            response = jsonify(rows)
+            response.status_code = 200
+            return response
+        else:
+            return jsonify("Error: User is not logged in.")
+    except Exception as e:
+        print(e)
+    finally:
+        cursor.close()
+        conn.close()
+
+#get searched objects
+@app.route("/api/search/<term>", methods=["GET"])
+def get_searched_objects(term):
+    conn = mysql.connect()
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
+    try:
+        query = f'''SELECT objects.title, objects.info, objects.end_time, MAX(bids.amount) as current_bid
+FROM objects 
+LEFT JOIN bids
+ON objects.id = bids.object 
+WHERE objects.title LIKE '%{term}%' 
+OR objects.info LIKE '%{term}%' 
+OR objects.description LIKE '%{term}%'
+GROUP BY objects.id'''
+        cursor.execute(query)
+        rows = cursor.fetchall()
+        response = jsonify(rows)
+        response.status_code = 200
+        return response
+    except Exception as e:
+        print(e)
+    finally:
+        cursor.close()
+        conn.close()
+
 app.run()
