@@ -359,5 +359,36 @@ GROUP BY objects.id'''
         cursor.close()
         conn.close()
 
+# rating a seller
+@app.route("/api/object/<id>/rate", methods=["POST"])
+def seller_rate(id):
+    conn = mysql.connect()
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
+    try:
+        user = session["user"]["id"]
+        cursor.execute(f"SELECT objects.poster FROM objects WHERE objects.id = {id} ")
+        seller = cursor.fetchone()
+        query = "INSERT INTO ratings SET ratings.rating = %s, ratings.user = %s"
+        bind = (request.json["rating"], seller["poster"])
+        if user is not None:
+            if user != seller['poster']:
+                cursor.execute(query, bind)
+                conn.commit()
+                response = jsonify({"Added Rating ": cursor.lastrowid})
+                response.status_code = 200
+                # UPDATE AVERAGE RATING ON USER TABLE
+                return response
+            else:
+                return jsonify("Error: You cannot rate yourself!")
+        else: 
+            return jsonify("Error: User is not logged in.")
+    except Exception as e:
+        print(e)
+    finally:
+        cursor.close()
+        conn.close()
+            
+
+
 
 app.run()
