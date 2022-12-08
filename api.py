@@ -410,4 +410,55 @@ def get_user_details(id):
         cursor.close()
         conn.close()
 
+# send message to user
+@app.route("/api/user/<id>/chat", methods=["POST"])
+def send_message(id):
+    conn = mysql.connect()
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
+    try:
+        user = session["user"]["id"]
+        query = '''INSERT INTO messages SET 
+sender = %s, receiver = %s,
+message = %s, 
+timestamp = CURRENT_TIMESTAMP'''
+        bind = (user, id, request.json["message"])
+        if user is not None:
+            cursor.execute(query, bind)
+            conn.commit()
+            response = jsonify({"Message sent ": cursor.lastrowid})
+            response.status_code = 200
+            return response
+        else:
+            return jsonify("Error: User is not logged in.")
+    except Exception as e:
+        print(e)
+    finally:
+        cursor.close()
+        conn.close()
+            
+# see chat
+@app.route("/api/user/<id>/chat", methods=["GET"])
+def see_chat(id):
+    conn = mysql.connect()
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
+    try:
+        user = session["user"]["id"]
+        query = f'''SELECT * FROM messages 
+WHERE (sender = {user} AND receiver = {id}) 
+OR (sender = {id} AND receiver = {user})
+ORDER BY messages.timestamp ASC'''
+        if user is not None:
+            cursor.execute(query)
+            rows = cursor.fetchall()
+            response = jsonify([rows])
+            response.status_code = 200
+            return response
+        else:
+            return jsonify("Error: User is not logged in.")
+    except Exception as e:
+        print(e)
+    finally:
+        cursor.close()
+        conn.close()
+            
 app.run()
