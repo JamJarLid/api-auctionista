@@ -1,0 +1,224 @@
+[
+    {
+        "description": "Register a user",
+        "request": {
+            "method": "post",
+            "url": "/api/register"
+        },
+        "response": {},
+        "access": "*"
+    },
+    {
+        "description": "Log in a user to a session",
+        "request": {
+            "method": "post",
+            "url": "/api/login",
+            "body": {
+                "email": "string",
+                "password": "string"
+            }
+        },
+        "response": {},
+        "access": "*"
+    },
+    {
+        "description": "Get a list view of all objects",
+        "request": {
+            "method": "get",
+            "url": "/api/objects"
+        },
+        "response": {
+            "content": [
+                {}
+            ]
+        }
+    },
+    {
+        "description": "Get a list view of all objects within a category",
+        "request": {
+            "method": "get",
+            "url": "/api/objects/categories/<id>",
+            "params": [
+                "id"
+            ]
+        },
+        "response": {
+            "content": [
+                {}
+            ]
+        }
+    },
+    {
+        "description": "Get a list view of all objects within a category",
+        "request": {
+            "method": "get",
+            "url": "/api/objects/<status>",
+            "params": "status"
+        },
+        "response": {
+            "content": [
+                {}
+            ]
+        }
+    },
+    {
+        "description": "Get one object using its id",
+        "request": {
+            "method": "get",
+            "url": "/api/objects/categories/<id>",
+            "params": [
+                "id"
+            ]
+        },
+        "response": {
+            "content": {}
+        }
+    },
+    {
+        "description": "Create a new object",
+        "request": {
+            "method": "post",
+            "url": "/api/objects",
+            "body": {
+                "title": "string",
+                "info": "string",
+                "description": "string",
+                "end_time": "datetime",
+                "start_time": "datetime",
+                "starting_price": "int",
+                "reserve_price": "int",
+                "category": "int unsigned (foreign key to categories)"
+            }
+        },
+        "response": {},
+        "access": "user"
+    },
+    {
+        "description": "Bid on an object",
+        "request": {
+            "method": "post",
+            "url": "/api/objects/<id>/bid",
+            "params": [
+                "id"
+            ],
+            "body": {
+                "amount": 400
+            }
+        },
+        "response": {},
+        "access": "user"
+    },
+    {
+        "description": "Get a list view of all the user's objects",
+        "request": {
+            "method": "get",
+            "url": "/api/user/objects"
+        },
+        "response": {
+            "content": [
+                {}
+            ]
+        },
+        "access": "user"
+    },
+    {
+        "description": "Get a list view of all the objects the user bidded on",
+        "request": {
+            "method": "get",
+            "url": "/api/user/objects/bidded"
+        },
+        "response": {
+            "content": [
+                {}
+            ]
+        },
+        "access": "user"
+    },
+    {
+        "description": "Get a list view of all objects matching a search term",
+        "request": {
+            "method": "get",
+            "url": "/api/search/<term>",
+            "params": "term"
+        },
+        "response": {
+            "content": [
+                {}
+            ]
+        }
+    },
+    {
+        "description": "Get a list view of all objects matching a search term, filtered by category",
+        "request": {
+            "method": "get",
+            "url": "/api/category/<id>/search/<term>",
+            "params": [
+                "term",
+                "id"
+            ]
+        },
+        "response": {
+            "content": [
+                {}
+            ]
+        }
+    },
+    {
+        "description": "Rate the seller of an object",
+        "request": {
+            "method": "post",
+            "url": "/api/object/<id>/rate",
+            "params": [
+                "id"
+            ],
+            "body": {
+                "rating": "int"
+            }
+        },
+        "response": {},
+        "access": "user"
+    },
+    {
+        "description": "Get a detailed view of a seller",
+        "request": {
+            "method": "get",
+            "url": "/api/user/<id>",
+            "params": [
+                "id"
+            ]
+        },
+        "response": {
+            "content": {}
+        }
+    },
+    {
+        "description": "Send a message to a user",
+        "request": {
+            "method": "post",
+            "url": "/api/user/<id>/chat",
+            "params": [
+                "id"
+            ],
+            "body": {
+                "message": "string"
+            }
+        },
+        "response": {},
+        "access": "user"
+    },
+    {
+        "description": "See a chat conversation between the user and the seller",
+        "request": {
+            "method": "get",
+            "url": "/api/user/<id>/chat",
+            "params": [
+                "id"
+            ]
+        },
+        "response": {
+            "content": [
+                {}
+            ]
+        }
+    }
+]
