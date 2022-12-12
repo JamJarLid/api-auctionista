@@ -3,7 +3,12 @@
         "description": "Register a user",
         "request": {
             "method": "post",
-            "url": "/api/register"
+            "url": "/api/register",
+            "body": {
+                "name": "string",
+                "email": "string",
+                "password": "string"
+            }
         },
         "response": {},
         "access": "*"

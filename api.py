@@ -163,7 +163,7 @@ def get_object_details(id):
         query2 = "SELECT * FROM bids WHERE bids.object = %s ORDER BY bids.amount DESC LIMIT 5"        
         bind = (id)
         cursor.execute(query, bind)
-        rows = cursor.fetchall()
+        rows = cursor.fetchone()
         cursor.execute(query2, bind)
         rows2 = cursor.fetchall()
         response = jsonify([rows, rows2])
