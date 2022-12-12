@@ -122,17 +122,6 @@ ON objects.id = bids.object
 WHERE OBJECTS.POSTER = 1
 GROUP BY objects.id;
 
-
-
-
-
-
-
-
-
-
-
-
 #Som användare vill jag kunna se en lista med auktionsobjekt jag har lagt bud på.
 # SELECT * FROM OBJECTS WHERE OBJECTS.ID IN (SELECT BIDS.OBJECT FROM BIDS WHERE BIDS.USER = USER.ID)
 SELECT objects.title, objects.info, objects.end_time, MAX(bids.amount) as current_bid
