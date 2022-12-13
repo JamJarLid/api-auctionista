@@ -36,6 +36,10 @@ GROUP BY objects.id;
 #Som besökare vill jag kunna se de 5 senaste buden på auktionsobjekt i detaljsidor.
 SELECT * FROM objects
 WHERE objects.id = 1;
+
+SELECT adress FROM images
+WHERE images.object = 1;
+
 SELECT * FROM bids
 WHERE bids.object = 1
 ORDER BY bids.amount DESC LIMIT 5;

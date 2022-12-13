@@ -160,13 +160,16 @@ def get_object_details(id):
     cursor = conn.cursor(pymysql.cursors.DictCursor)
     try:
         query = "SELECT * FROM objects WHERE objects.id = %s"
-        query2 = "SELECT * FROM bids WHERE bids.object = %s ORDER BY bids.amount DESC LIMIT 5"        
+        query2 = "SELECT * FROM bids WHERE bids.object = %s ORDER BY bids.amount DESC LIMIT 5"
+        query3 = "SELECT adress FROM images WHERE images.object = %s"
         bind = (id)
         cursor.execute(query, bind)
-        rows = cursor.fetchone()
+        details = cursor.fetchone()
         cursor.execute(query2, bind)
-        rows2 = cursor.fetchall()
-        response = jsonify([rows, rows2])
+        bids = cursor.fetchall()
+        cursor.execute(query3, bind)
+        images = cursor.fetchall()
+        response = jsonify([details, images, bids])
         response.status_code = 200
         return response
     except Exception as e:
